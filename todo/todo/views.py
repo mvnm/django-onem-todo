@@ -26,7 +26,8 @@ class View(_View):
             raise PermissionDenied
 
         data = jwt.decode(token.replace('Bearer ', ''), key='87654321')
-        user, created = User.objects.get_or_create(id=data['sub'])
+        user, created = User.objects.get_or_create(id=data['sub'],
+                                                   username=str(data['sub']))
         return user
 
     def to_response(self, menu_or_form):

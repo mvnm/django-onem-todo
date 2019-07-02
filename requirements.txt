@@ -1,3 +1,3 @@
 Django==2.2.2
-onem-py==1.0
+onem-py==1.1
 PyJWT==1.7.1

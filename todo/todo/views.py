@@ -68,14 +68,19 @@ class TaskCreateView(View):
 
     def get(self, request):
         body = [
-            onem.forms.FormItem('Please provide a description for the task',
-                                'descr',
+            onem.forms.FormItem('descr',
                                 onem.forms.FormItemType.STRING,
+                                'Please provide a description for the task',
                                 header='description'),
-            onem.forms.FormItem('Provide a due date',
-                                'due_date',
+            onem.forms.FormItem('due_date',
                                 onem.forms.FormItemType.DATE,
-                                header='due date')
+                                'Provide a due date',
+                                header='due date'),
+            onem.forms.FormItemMenu('prio', [
+                onem.forms.FormItemMenuItem('High priority', 'high'),
+                onem.forms.FormItemMenuItem('Or maybe:', is_option=False),
+                onem.forms.FormItemMenuItem('Low priority', 'low'),
+            ])
 
         ]
         return self.to_response(
@@ -84,12 +89,13 @@ class TaskCreateView(View):
 
     def post(self, request):
         descr = request.POST['descr']
-
+        prio = request.POST['prio']
         due_date = request.POST['due_date']
 
         Task.objects.create(
             user=self.get_user(),
             descr=descr,
+            prio=prio,
             due_date=datetime.datetime.strptime(due_date, '%Y-%m-%d').date()
         )
         return HttpResponseRedirect(reverse('home'))

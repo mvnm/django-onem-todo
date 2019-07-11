@@ -1,0 +1,6 @@
+{
+  "name": "Django ONEm Todo app",
+  "description": "Django ONEm Todo app",
+  "repository": "https://github.com/mvnm/django-onem-todo",
+  "keywords": ["django", "onem", "todo", "sms", "app"]
+}

@@ -31,15 +31,11 @@ class View(_View):
         return user
 
     def to_response(self, menu_or_form):
-        response = onem.Response(menu_or_form, self.request.GET['corr_id'])
+        response = onem.Response(menu_or_form)
         return HttpResponse(
             response.as_json(),
             content_type='application/json'
         )
-
-    def redirect_to(self, path):
-        path = '{}?corr_id={}'.format(path, self.request.GET['corr_id'])
-        return HttpResponseRedirect(path)
 
 
 class HomeView(View):
@@ -105,7 +101,7 @@ class TaskCreateView(View):
             prio=prio,
             due_date=datetime.datetime.strptime(due_date, '%Y-%m-%d').date()
         )
-        return self.redirect_to(reverse('home'))
+        return HttpResponseRedirect(reverse('home'))
 
 
 class TaskDetailView(View):
@@ -132,12 +128,12 @@ class TaskDetailView(View):
         task = get_object_or_404(Task, id=id)
         task.done = not task.done
         task.save()
-        return self.redirect_to(reverse('home'))
+        return HttpResponseRedirect(reverse('home'))
 
     def delete(self, request, id):
         task = get_object_or_404(Task, id=id)
         task.delete()
-        return self.redirect_to(reverse('home'))
+        return HttpResponseRedirect(reverse('home'))
 
 
 class TaskListDoneView(View):

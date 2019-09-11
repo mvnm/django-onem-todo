@@ -1,6 +1,8 @@
-import onem
 import datetime
+import json
 import jwt
+import onem
+import re
 
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -71,18 +73,22 @@ class TaskCreateView(View):
 
     def get(self, request):
         body = [
-            onem.forms.FormItem('descr',
-                                onem.forms.FormItemType.STRING,
-                                'Please provide a description for the task',
-                                header='description'),
-            onem.forms.FormItem('due_date',
-                                onem.forms.FormItemType.DATE,
-                                'Provide a due date',
-                                header='due date'),
-            onem.forms.FormItemMenu('prio', [
-                onem.forms.FormItemMenuItem('High priority', 'high'),
-                onem.forms.FormItemMenuItem('Or maybe:', is_option=False),
-                onem.forms.FormItemMenuItem('Low priority', 'low'),
+            onem.forms.StringFormItem(
+                'descr', label='Please provide a description for the task',
+                header='description',
+                # validate_url=reverse('task_create_validate'),
+
+            ),
+            onem.forms.DateFormItem(
+                'due_date', label='Provide a due date',
+                header='due date',
+                validate_type_error='Ooops. That is an invalid date!',
+                validate_type_error_footer='Send "today"',
+            ),
+            onem.forms.MenuFormItem('prio', [
+                onem.forms.MenuItemFormItem('High priority', 'high'),
+                onem.forms.MenuItemFormItem('Or maybe:', is_option=False),
+                onem.forms.MenuItemFormItem('Low priority', 'low'),
             ])
 
         ]
@@ -102,6 +108,28 @@ class TaskCreateView(View):
             due_date=datetime.datetime.strptime(due_date, '%Y-%m-%d').date()
         )
         return HttpResponseRedirect(reverse('home'))
+
+
+class TaskCreateValidateView(View):
+    http_method_names = ['get']
+
+    def get(self, request):
+        descr = request.GET.get('descr')
+        if descr:
+            if re.findall('[^\w]+', descr):
+                valid = False
+                message = 'You are not allowed to use special chars'
+            else:
+                valid = True
+                message = None
+        else:
+            valid = True
+            message = None
+
+        return HttpResponse(
+            json.dumps({'valid': valid, 'message': message}),
+            content_type='application/json'
+        )
 
 
 class TaskDetailView(View):

@@ -1,8 +1,9 @@
 import datetime
 import json
 import jwt
-import onem
 import re
+
+from onemsdk.schema import v1 as onem
 
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -35,7 +36,7 @@ class View(_View):
     def to_response(self, menu_or_form):
         response = onem.Response(menu_or_form)
         return HttpResponse(
-            response.as_json(),
+            response.json(),
             content_type='application/json'
         )
 
@@ -51,21 +52,20 @@ class HomeView(View):
         todo_count = todo.count()
 
         body = [
-            onem.menus.MenuItem('New todo', url=reverse('task_create')),
-            onem.menus.MenuItem('Done({done})'.format(done=done_count),
-                                url=reverse('task_list_done')),
-            onem.menus.MenuItem('Todo({todo})'.format(todo=todo_count),
-                                is_option=False),
+            onem.MenuItem('New todo', path=reverse('task_create')),
+            onem.MenuItem('Done({done})'.format(done=done_count),
+                          path=reverse('task_list_done')),
+            onem.MenuItem('Todo({todo})'.format(todo=todo_count))
         ]
 
         for item in todo:
             body.append(
-                onem.menus.MenuItem('{descr} {due}'.format(
+                onem.MenuItem('{descr} {due}'.format(
                     descr=item.descr,
                     due=item.due_date,
-                ), url=item.get_absolute_url()))
+                ), path=item.get_absolute_url()))
 
-        return self.to_response(onem.menus.Menu(body, header='menu'))
+        return self.to_response(onem.Menu(body, header='menu'))
 
 
 class TaskCreateView(View):
@@ -73,38 +73,31 @@ class TaskCreateView(View):
 
     def get(self, request):
         body = [
-            onem.forms.StringFormItem(
-                'descr', label='Please provide a description for the task',
+            onem.FormItemContent(
+                onem.FormItemContentType.string,
+                'descr',
+                description='Please provide a description for the task',
                 header='description',
-                # validate_url=reverse('task_create_validate'),
-
             ),
-            onem.forms.DateFormItem(
-                'due_date', label='Provide a due date',
+            onem.FormItemContent(
+                onem.FormItemContentType.date,
+                'due_date',
+                description='Provide a due date',
                 header='due date',
-                validate_type_error='Ooops. That is an invalid date!',
-                validate_type_error_footer='Send "today"',
             ),
-            onem.forms.MenuFormItem('prio', [
-                onem.forms.MenuItemFormItem('High priority', 'high'),
-                onem.forms.MenuItemFormItem('Or maybe:', is_option=False),
-                onem.forms.MenuItemFormItem('Low priority', 'low'),
-            ])
 
         ]
         return self.to_response(
-            onem.forms.Form(body, reverse('task_create'), method='POST')
+            onem.Form(body, reverse('task_create'), method='POST')
         )
 
     def post(self, request):
         descr = request.POST['descr']
-        prio = request.POST['prio']
         due_date = request.POST['due_date']
 
         Task.objects.create(
             user=self.get_user(),
             descr=descr,
-            prio=prio,
             due_date=datetime.datetime.strptime(due_date, '%Y-%m-%d').date()
         )
         return HttpResponseRedirect(reverse('home'))
@@ -141,16 +134,14 @@ class TaskDetailView(View):
         mark_as_label = 'Mark as todo' if task.done else 'Mark as done'
 
         body = [
-            onem.menus.MenuItem('Task: {descr}'.format(descr=task.descr),
-                                is_option=False),
-            onem.menus.MenuItem('Due: {date}'.format(date=str(task.due_date)),
-                                is_option=False),
-            onem.menus.MenuItem(mark_as_label, url=task.get_absolute_url(),
-                                method='PUT'),
-            onem.menus.MenuItem('Delete', url=task.get_absolute_url(),
-                                method='DELETE'),
+            onem.MenuItem('Task: {descr}'.format(descr=task.descr)),
+            onem.MenuItem('Due: {date}'.format(date=str(task.due_date))),
+            onem.MenuItem(mark_as_label, path=task.get_absolute_url(),
+                          method='PUT'),
+            onem.MenuItem('Delete', path=task.get_absolute_url(),
+                          method='DELETE'),
         ]
-        return self.to_response(onem.menus.Menu(body, header='view'))
+        return self.to_response(onem.Menu(body, header='view'))
 
     def put(self, request, id):
         task = get_object_or_404(Task, id=id)
@@ -175,9 +166,9 @@ class TaskListDoneView(View):
 
         for item in done:
             body.append(
-                onem.menus.MenuItem('{descr} {due}'.format(
+                onem.MenuItem('{descr} {due}'.format(
                     descr=item.descr,
                     due=item.due_date,
-                ), url=item.get_absolute_url()))
+                ), path=item.get_absolute_url()))
 
-        return self.to_response(onem.menus.Menu(body, header='done'))
+        return self.to_response(onem.Menu(body, header='done'))

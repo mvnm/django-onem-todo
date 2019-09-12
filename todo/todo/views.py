@@ -73,22 +73,21 @@ class TaskCreateView(View):
 
     def get(self, request):
         body = [
-            onem.FormItemContent(
-                onem.FormItemContentType.string,
-                'descr',
+            onem.FormItem(
+                type=onem.FormItemType.url,
+                name='descr',
                 description='Please provide a description for the task',
                 header='description',
             ),
-            onem.FormItemContent(
-                onem.FormItemContentType.date,
-                'due_date',
+            onem.FormItem(
+                type=onem.FormItemType.date,
+                name='due_date',
                 description='Provide a due date',
                 header='due date',
             ),
-
         ]
         return self.to_response(
-            onem.Form(body, reverse('task_create'), method='POST')
+            onem.Form(body=body, path=reverse('task_create'), method='POST')
         )
 
     def post(self, request):

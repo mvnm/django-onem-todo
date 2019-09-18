@@ -74,7 +74,7 @@ class TaskCreateView(View):
     def get(self, request):
         body = [
             onem.FormItem(
-                type=onem.FormItemType.url,
+                type=onem.FormItemType.string,
                 name='descr',
                 description='Please provide a description for the task',
                 header='description',
